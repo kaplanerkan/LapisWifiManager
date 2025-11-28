@@ -1,0 +1,50 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.LapisWifiManager" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowBackground">#F2F2F7</item> <!-- iOS gri arka plan -->
+    </style>
+
+    <style name="Theme.LapisWifiManager" parent="Base.Theme.LapisWifiManager" />
+
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
+
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">#F2F2F7</item> <!-- iOS gri arka plan -->
+    </style>
+
+
+    <style name="AnimBottom" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@anim/dialog_bottom_in</item>
+        <item name="android:windowExitAnimation">@anim/dialog_bottom_out</item>
+    </style>
+
+    <style name="ShareDialog" parent="@android:style/Animation.Dialog">
+        <item name="android:windowAnimationStyle">@style/AnimBottom</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <!-- 设置背景色 透明-->
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- 设置是否显示背景 -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <!-- 设置背景透明度 0 全透明 1 全不透明-->
+        <item name="android:backgroundDimAmount">0.3</item>
+        <!-- 设置点击空白消失 -->
+        <item name="android:windowCloseOnTouchOutside">true</item>
+    </style>
+    <style name="ThemeOverlay.App.TextInputEditText.Filled" parent="">
+        <item name="colorPrimary">#007AFF</item>
+        <item name="colorControlActivated">#007AFF</item>
+        <item name="android:editTextColor">#000000</item>
+        <item name="android:textColorHint">#99000000</item>
+    </style>
+
+
+</resources>
