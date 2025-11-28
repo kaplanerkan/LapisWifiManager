@@ -119,9 +119,6 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
         return networkId != -1 && enableNetwork(networkId)
     }
 
-    // ❌ BU METODU SİLİN - BaseWiFiManager'da zaten var
-    // fun connectToWPA2Network(...) { ... }
-
     // Listener ayarları
     fun setOnWifiEnabledListener(listener: OnWifiEnabledListener?) {
         onWifiEnabledListener = listener
@@ -217,6 +214,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
             }
         }
 
+        @Suppress("DEPRECATION")
         private fun handleScanResultsAvailable() {
             Log.i(TAG, "WiFi tarama tamamlandı")
 
@@ -258,6 +256,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
             }
         }
 
+        @Suppress("DEPRECATION")
         private fun handleSupplicantStateChanged(intent: Intent) {
             val newState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(
