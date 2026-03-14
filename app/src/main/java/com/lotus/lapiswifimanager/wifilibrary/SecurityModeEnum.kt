@@ -1,15 +1,15 @@
 package com.lotus.lapiswifimanager.wifilibrary
 
 /**
- * WiFi ağlarının güvenlik/şifreleme türlerini temsil eden enum
+ * Enum fuer Sicherheits-/Verschluesselungstypen von WiFi-Netzwerken
  *
- * Desteklenen türler:
- * - OPEN  → Açık (şifresiz)
- * - WEP   → Eski ve güvensiz şifreleme
- * - WPA   → WiFi Protected Access
- * - WPA2  → Daha güvenli (şu anda en yaygın)
+ * Unterstuetzte Typen:
+ * - OPEN  -> Offen (ohne Passwort)
+ * - WEP   -> Alte und unsichere Verschluesselung
+ * - WPA   -> WiFi Protected Access
+ * - WPA2  -> Sicherer (derzeit am weitesten verbreitet)
  *
- * Orijinal yazar: kongqingwei (2017)
+ * Urspruenglicher Autor: kongqingwei (2017)
  */
 enum class SecurityModeEnum {
     OPEN,

@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">LapisWifiManager</string>
+    <string name="wifi_manager_title">WiFi Verbindung</string>
+    <string name="wifi_switch_label">WiFi Ein/Aus</string>
+    <string name="wifi_empty_list">Keine verfügbaren WiFi-Netzwerke gefunden.\nZiehen Sie nach unten zum Aktualisieren.</string>
+    <string name="wifi_password_hint">Passwort</string>
+    <string name="wifi_cancel">Abbrechen</string>
+    <string name="wifi_connect">Verbinden</string>
+    <string name="wifi_connected">Verbunden</string>
+    <string name="wifi_signal_strength">Signalstärke</string>
+    <string name="wifi_security">Sicherheit</string>
 </resources>

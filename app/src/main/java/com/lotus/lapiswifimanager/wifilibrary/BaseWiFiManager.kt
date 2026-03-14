@@ -26,7 +26,7 @@ open class BaseWiFiManager(context: Context) {
         appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     }
 
-    // Android 10+ için ConnectivityManager
+    // ConnectivityManager fuer Android 10+
     private val connectivityManager: ConnectivityManager? by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -80,30 +80,30 @@ open class BaseWiFiManager(context: Context) {
     // ═════════════════════════════════════════════════════════════════════════════
 
     /**
-     * WiFi taraması başlat
+     * WiFi-Scan starten
      */
     fun startScan(): Boolean {
         if (!hasWifiStatePermission() || !hasLocationPermission()) {
-            Log.w(TAG, "Tarama için gerekli izinler yok")
+            Log.w(TAG, "Erforderliche Berechtigungen fuer Scan fehlen")
             return false
         }
 
         return try {
             val success = wifiManager.startScan()
-            Log.d(TAG, "WiFi taraması başlatıldı: $success")
+            Log.d(TAG, "WiFi-Scan gestartet: $success")
             success
         } catch (e: Exception) {
-            Log.e(TAG, "Tarama başlatılamadı", e)
+            Log.e(TAG, "Scan konnte nicht gestartet werden", e)
             false
         }
     }
 
     /**
-     * Tekrarsız WiFi tarama sonuçlarını al
+     * Eindeutige WiFi-Scan-Ergebnisse abrufen
      */
     fun getUniqueScanResults(): List<ScanResult> {
         if (!hasWifiStatePermission() || !hasLocationPermission()) {
-            Log.e(TAG, "⚠️ Scan results için gerekli izinler yok!")
+            Log.e(TAG, "Erforderliche Berechtigungen fuer Scan-Ergebnisse fehlen!")
             Log.e(TAG, "  WiFi State: ${hasWifiStatePermission()}")
             Log.e(TAG, "  Location: ${hasLocationPermission()}")
             return emptyList()
@@ -111,7 +111,7 @@ open class BaseWiFiManager(context: Context) {
 
         return try {
             val results = wifiManager.scanResults ?: emptyList()
-            Log.d(TAG, "Ham tarama sonucu: ${results.size} ağ")
+            Log.d(TAG, "Rohe Scan-Ergebnisse: ${results.size} Netzwerke")
 
             val uniqueResults = results.asSequence()
                 .filter { it.SSID.isNotBlank() }
@@ -120,19 +120,19 @@ open class BaseWiFiManager(context: Context) {
                 .values
                 .toList()
 
-            Log.d(TAG, "Benzersiz sonuçlar: ${uniqueResults.size} ağ")
+            Log.d(TAG, "Eindeutige Ergebnisse: ${uniqueResults.size} Netzwerke")
             uniqueResults
         } catch (e: SecurityException) {
-            Log.e(TAG, "⚠️ SecurityException: İzinler kaybolmuş olabilir!", e)
+            Log.e(TAG, "SecurityException: Berechtigungen moeglicherweise verloren!", e)
             emptyList()
         } catch (e: Exception) {
-            Log.e(TAG, "Scan results alınamadı", e)
+            Log.e(TAG, "Scan-Ergebnisse konnten nicht abgerufen werden", e)
             emptyList()
         }
     }
 
     /**
-     * Güvenlik modunu belirle
+     * Sicherheitsmodus bestimmen
      */
     fun getSecurityMode(scanResult: ScanResult): SecurityModeEnum {
         val capabilities = scanResult.capabilities.uppercase()
@@ -150,26 +150,26 @@ open class BaseWiFiManager(context: Context) {
     //  WiFi Connection
     // ═════════════════════════════════════════════════════════════════════════════
     /**
-     * WPA2 ağa bağlanma - Android sürümüne göre otomatik seçim
+     * WPA2-Netzwerkverbindung - automatische Auswahl nach Android-Version
      */
     fun connectToWPA2Network(ssid: String, password: String): Boolean {
         Log.d(TAG, "Android SDK: ${Build.VERSION.SDK_INT}")
 
         if (!hasRequiredPermissions()) {
-            Log.e(TAG, "Gerekli izinler yok!")
+            Log.e(TAG, "Erforderliche Berechtigungen fehlen!")
             return false
         }
 
         if (!isWifiEnabled()) {
-            Log.e(TAG, "WiFi kapalı!")
+            Log.e(TAG, "WiFi ist deaktiviert!")
             return false
         }
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10+ için WifiNetworkSuggestion kullan (sistem geneli bağlantı)
+            // WifiNetworkSuggestion fuer Android 10+ verwenden (systemweite Verbindung)
             connectWithSuggestion(ssid, password)
         } else {
-            // Android 9 ve altı için eski yöntem
+            // Alte Methode fuer Android 9 und niedriger
             val networkId = setWPA2Network(ssid, password)
             if (networkId != -1) {
                 enableNetwork(networkId)
@@ -179,37 +179,37 @@ open class BaseWiFiManager(context: Context) {
         }
     }
     /**
-     * Android 10+ için WifiNetworkSuggestion - SİSTEM GENELİ BAĞLANTI
-     * Bu yöntem kullanıcıya bildirim gösterir ve onay ister
+     * WifiNetworkSuggestion fuer Android 10+ - SYSTEMWEITE VERBINDUNG
+     * Diese Methode zeigt dem Benutzer eine Benachrichtigung und fordert Bestaetigung an
      */
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun connectWithSuggestion(ssid: String, password: String): Boolean {
         val cleanSsid = ssid.trim().removeSurrounding("\"")
 
-        Log.d(TAG, "Android 10+ WifiNetworkSuggestion oluşturuluyor:")
+        Log.d(TAG, "Android 10+ WifiNetworkSuggestion wird erstellt:")
         Log.d(TAG, "  SSID: $cleanSsid")
         Log.d(TAG, "  Password length: ${password.length}")
 
         try {
-            // Önce mevcut önerileri temizle
+            // Bestehende Vorschlaege zuerst entfernen
             val existingSuggestions = wifiManager.networkSuggestions
             if (existingSuggestions.isNotEmpty()) {
-                Log.d(TAG, "Mevcut ${existingSuggestions.size} öneri temizleniyor")
+                Log.d(TAG, "Bestehende ${existingSuggestions.size} Vorschlaege werden entfernt")
                 wifiManager.removeNetworkSuggestions(existingSuggestions)
             }
 
-            // Yeni öneri oluştur
+            // Neuen Vorschlag erstellen
             val suggestion = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Android 11+ için daha gelişmiş ayarlar
+                // Erweiterte Einstellungen fuer Android 11+
                 WifiNetworkSuggestion.Builder()
                     .setSsid(cleanSsid)
                     .setWpa2Passphrase(password)
-                    .setIsAppInteractionRequired(true) // Kullanıcı onayı gerekli
-                    .setIsUserInteractionRequired(false) // Otomatik bağlan
-                    .setPriority(Integer.MAX_VALUE) // En yüksek öncelik
+                    .setIsAppInteractionRequired(true) // Benutzerbestaetigung erforderlich
+                    .setIsUserInteractionRequired(false) // Automatisch verbinden
+                    .setPriority(Integer.MAX_VALUE) // Hoechste Prioritaet
                     .build()
             } else {
-                // Android 10 için temel ayarlar
+                // Grundeinstellungen fuer Android 10
                 WifiNetworkSuggestion.Builder()
                     .setSsid(cleanSsid)
                     .setWpa2Passphrase(password)
@@ -222,28 +222,28 @@ open class BaseWiFiManager(context: Context) {
 
             return when (status) {
                 WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS -> {
-                    Log.i(TAG, "✓ Ağ önerisi başarıyla eklendi")
-                    Log.i(TAG, "  Kullanıcı bildirimi gelecek")
-                    Log.i(TAG, "  Sistem otomatik olarak bağlanacak")
+                    Log.i(TAG, "Netzwerkvorschlag erfolgreich hinzugefuegt")
+                    Log.i(TAG, "  Benutzerbenachrichtigung wird angezeigt")
+                    Log.i(TAG, "  System verbindet automatisch")
                     true
                 }
                 WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_DUPLICATE -> {
-                    Log.w(TAG, "⚠ Bu ağ zaten önerilmiş")
-                    Log.w(TAG, "  Sistem muhtemelen zaten bağlı veya bağlanacak")
+                    Log.w(TAG, "Dieses Netzwerk wurde bereits vorgeschlagen")
+                    Log.w(TAG, "  System ist wahrscheinlich bereits verbunden oder wird sich verbinden")
                     true
                 }
                 WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_APP_DISALLOWED -> {
-                    Log.e(TAG, "✗ Uygulama ağ önerme iznine sahip değil")
+                    Log.e(TAG, "App hat keine Berechtigung fuer Netzwerkvorschlaege")
                     false
                 }
                 else -> {
-                    Log.e(TAG, "✗ Ağ önerisi eklenemedi: $status")
+                    Log.e(TAG, "Netzwerkvorschlag konnte nicht hinzugefuegt werden: $status")
                     false
                 }
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "WifiNetworkSuggestion hatası", e)
+            Log.e(TAG, "WifiNetworkSuggestion Fehler", e)
             return false
         }
     }
@@ -252,19 +252,19 @@ open class BaseWiFiManager(context: Context) {
 
 
     /**
-     * Android 9 ve altı için klasik yöntem
+     * Klassische Methode fuer Android 9 und niedriger
      */
     @Suppress("DEPRECATION")
     protected fun setWPA2Network(ssid: String, password: String): Int {
         val cleanSsid = ssid.trim().removeSurrounding("\"")
 
-        Log.d(TAG, "WPA2 Config oluşturuluyor:")
+        Log.d(TAG, "WPA2 Config wird erstellt:")
         Log.d(TAG, "  SSID: $cleanSsid")
         Log.d(TAG, "  Password length: ${password.length}")
 
-        // Önce aynı SSID'li eski config'i sil
+        // Alte Konfiguration mit gleicher SSID zuerst entfernen
         getConfiguredNetworkBySsid(cleanSsid)?.let { existing ->
-            Log.d(TAG, "Eski config siliniyor: ${existing.networkId}")
+            Log.d(TAG, "Alte Konfiguration wird entfernt: ${existing.networkId}")
             wifiManager.removeNetwork(existing.networkId)
             wifiManager.saveConfiguration()
         }
@@ -303,13 +303,13 @@ open class BaseWiFiManager(context: Context) {
     }
 
     /**
-     * Android 10+ için Network Request yöntemi
+     * Network Request Methode fuer Android 10+
      */
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun connectWithNetworkRequest(ssid: String, password: String): Boolean {
         val cleanSsid = ssid.trim().removeSurrounding("\"")
 
-        Log.d(TAG, "Android 10+ NetworkRequest oluşturuluyor:")
+        Log.d(TAG, "Android 10+ NetworkRequest wird erstellt:")
         Log.d(TAG, "  SSID: $cleanSsid")
         Log.d(TAG, "  Password length: ${password.length}")
 
@@ -332,31 +332,31 @@ open class BaseWiFiManager(context: Context) {
             networkCallback = object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
                     super.onAvailable(network)
-                    Log.i(TAG, "✓ Ağ bağlantısı başarılı: $cleanSsid")
+                    Log.i(TAG, "Netzwerkverbindung erfolgreich: $cleanSsid")
                     connectivityManager?.bindProcessToNetwork(network)
 
-                    // Bu callback WiFiManager'daki listener'ı tetiklemez
-                    // çünkü BroadcastReceiver zaten COMPLETED durumunu yakalıyor
+                    // Dieser Callback loest nicht den Listener im WiFiManager aus,
+                    // da der BroadcastReceiver bereits den COMPLETED-Zustand erfasst
                 }
 
                 override fun onUnavailable() {
                     super.onUnavailable()
-                    Log.e(TAG, "✗ Ağ bağlantısı başarısız: $cleanSsid (timeout)")
+                    Log.e(TAG, "Netzwerkverbindung fehlgeschlagen: $cleanSsid (timeout)")
                 }
 
                 override fun onLost(network: Network) {
                     super.onLost(network)
-                    Log.w(TAG, "Ağ bağlantısı kesildi: $cleanSsid")
+                    Log.w(TAG, "Netzwerkverbindung unterbrochen: $cleanSsid")
                 }
             }
 
             connectivityManager?.requestNetwork(request, networkCallback!!)
-            Log.d(TAG, "Network request gönderildi")
+            Log.d(TAG, "Network Request gesendet")
 
             return true
 
         } catch (e: Exception) {
-            Log.e(TAG, "NetworkRequest hatası", e)
+            Log.e(TAG, "NetworkRequest Fehler", e)
             return false
         }
     }
@@ -366,7 +366,7 @@ open class BaseWiFiManager(context: Context) {
     // ═════════════════════════════════════════════════════════════════════════════
 
     /**
-     * Önceden kaydedilmiş ağ konfigürasyonunu SSID'ye göre bul
+     * Gespeicherte Netzwerkkonfiguration anhand der SSID finden
      */
     @Suppress("DEPRECATION")
     fun getConfiguredNetworkBySsid(ssid: String): WifiConfiguration? {
@@ -384,7 +384,7 @@ open class BaseWiFiManager(context: Context) {
     @Suppress("DEPRECATION")
     protected fun enableNetwork(networkId: Int): Boolean {
         if (networkId == -1) {
-            Log.e(TAG, "Geçersiz network ID: -1")
+            Log.e(TAG, "Ungueltige Network ID: -1")
             return false
         }
 
@@ -397,12 +397,12 @@ open class BaseWiFiManager(context: Context) {
 
             if (success) {
                 wifiManager.reconnect()
-                Log.d(TAG, "reconnect() çağrıldı")
+                Log.d(TAG, "reconnect() aufgerufen")
             }
 
             success
         } catch (e: Exception) {
-            Log.e(TAG, "enableNetwork hatası", e)
+            Log.e(TAG, "enableNetwork Fehler", e)
             false
         }
     }
@@ -411,7 +411,7 @@ open class BaseWiFiManager(context: Context) {
     protected fun setOpenNetwork(ssid: String): Int {
         val cleanSsid = ssid.trim().removeSurrounding("\"")
 
-        Log.d(TAG, "Open network config oluşturuluyor: $cleanSsid")
+        Log.d(TAG, "Open Network Config wird erstellt: $cleanSsid")
 
         val config = WifiConfiguration().apply {
             SSID = "\"$cleanSsid\""
@@ -439,7 +439,7 @@ open class BaseWiFiManager(context: Context) {
     protected fun setWEPNetwork(ssid: String, password: String): Int {
         val cleanSsid = ssid.trim().removeSurrounding("\"")
 
-        Log.d(TAG, "WEP network config oluşturuluyor: $cleanSsid")
+        Log.d(TAG, "WEP Network Config wird erstellt: $cleanSsid")
 
         val config = WifiConfiguration().apply {
             SSID = "\"$cleanSsid\""
@@ -470,7 +470,7 @@ open class BaseWiFiManager(context: Context) {
 
     fun disconnectCurrentWifi() {
         if (!hasChangeWifiStatePermission()) {
-            Log.w(TAG, "Bağlantıyı kesmek için izin yok")
+            Log.w(TAG, "Keine Berechtigung zum Trennen der Verbindung")
             return
         }
 
@@ -484,9 +484,9 @@ open class BaseWiFiManager(context: Context) {
             } else {
                 wifiManager.disconnect()
             }
-            Log.d(TAG, "WiFi bağlantısı kesildi")
+            Log.d(TAG, "WiFi-Verbindung getrennt")
         } catch (e: Exception) {
-            Log.e(TAG, "Bağlantı kesilemedi", e)
+            Log.e(TAG, "Verbindung konnte nicht getrennt werden", e)
         }
     }
 
@@ -503,7 +503,7 @@ open class BaseWiFiManager(context: Context) {
         return try {
             wifiManager.removeNetwork(networkId)
         } catch (e: Exception) {
-            Log.e(TAG, "Ağ silinemedi", e)
+            Log.e(TAG, "Netzwerk konnte nicht entfernt werden", e)
             false
         }
     }

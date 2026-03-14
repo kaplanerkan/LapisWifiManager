@@ -1,6 +1,7 @@
 package com.lotus.lapiswifimanager.ui
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,17 +11,14 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.view.Gravity
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.AdapterView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.snackbar.Snackbar
 import com.lotus.lapiswifimanager.R
@@ -31,7 +29,6 @@ import com.lotus.lapiswifimanager.wifilibrary.adapter.WifiListAdapter
 import com.lotus.lapiswifimanager.wifilibrary.listener.OnWifiConnectListener
 import com.lotus.lapiswifimanager.wifilibrary.listener.OnWifiEnabledListener
 import com.lotus.lapiswifimanager.wifilibrary.listener.OnWifiScanResultsListener
-import es.dmoral.toasty.Toasty
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity(),
@@ -42,29 +39,38 @@ class MainActivity : AppCompatActivity(),
     OnWifiConnectListener,
     OnWifiEnabledListener {
 
-
-    private val TAG = "MainActivity"
-
+    companion object {
+        private const val TAG = "LapisWifiManager"
+        const val EXTRA_CONNECTED_SSID = "connected_ssid"
+        const val EXTRA_CONNECTED_PASSWORD = "connected_password"
+    }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var wifiManager: WiFiManager
     private lateinit var wifiListAdapter: WifiListAdapter
 
+    // Letztes verwendetes Passwort waehrend der Verbindung speichern
+    private var lastUsedPassword: String = ""
+    private var lastConnectingSsid: String = ""
+
     // ═════════════════════════════════════════════════════════════════════════════
-    //  Lifecycle Methods
+    //  Lifecycle
     // ═════════════════════════════════════════════════════════════════════════════
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            title = getString(R.string.wifi_manager_title)
+        }
+        binding.toolbar.setNavigationOnClickListener {
+            setResult(Activity.RESULT_CANCELED)
+            finish()
         }
 
         initViews()
@@ -72,16 +78,12 @@ class MainActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-
-        // İzinleri tekrar kontrol et
         checkAndRequestPermissionsIfNeeded()
-
         wifiManager.apply {
             setOnWifiEnabledListener(this@MainActivity)
             setOnWifiScanResultsListener(this@MainActivity)
             setOnWifiConnectListener(this@MainActivity)
         }
-        // WiFi durumunu güncelle
         updateWifiSwitchState()
     }
 
@@ -101,26 +103,22 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        setResult(Activity.RESULT_CANCELED)
+        super.onBackPressed()
+    }
 
     // ═════════════════════════════════════════════════════════════════════════════
     //  Initialization
     // ═════════════════════════════════════════════════════════════════════════════
+
     private fun initViews() {
-
-        Toasty.Config.getInstance()
-            .tintIcon(true) // optional (apply textColor also to the icon)
-            .setTextSize(34) // optional
-            .allowQueue(true) // optional (prevents several Toastys from queuing)
-            .setGravity(Gravity.CENTER) // optional (set toast gravity, offsets are optional)
-            .apply() // required
-
         setupWifiManager()
         setupSwipeRefresh()
         setupListView()
         requestWifiPermissions()
 
-        // WiFi anahtarını güncel duruma göre ayarla
         binding.switchWifi.isChecked = wifiManager.isWifiEnabled()
     }
 
@@ -128,75 +126,51 @@ class MainActivity : AppCompatActivity(),
         wifiManager = WiFiManager.getInstance(applicationContext)
 
         binding.switchWifi.setOnCheckedChangeListener { buttonView, isChecked ->
-            // Kullanıcı switch'i değiştirdiğinde
             val currentWifiState = wifiManager.isWifiEnabled()
 
             if (isChecked && !currentWifiState) {
-                // WiFi açılmak isteniyor ama kapalı
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    // Android 10+ için ayarlara yönlendir
                     showWifiSettingsDialog(true)
-                    // Switch'i geri eski haline getir
                     buttonView.isChecked = false
                 } else {
-                    // Android 9 ve altı için direkt aç
                     wifiManager.openWiFi()
                 }
             } else if (!isChecked && currentWifiState) {
-                // WiFi kapatılmak isteniyor ama açık
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    // Android 10+ için ayarlara yönlendir
                     showWifiSettingsDialog(false)
-                    // Switch'i geri eski haline getir
                     buttonView.isChecked = true
                 } else {
-                    // Android 9 ve altı için direkt kapat
                     wifiManager.closeWiFi()
                 }
             }
         }
     }
 
-    /**
-     * WiFi ayarlarına yönlendirme dialogu
-     */
     private fun showWifiSettingsDialog(turnOn: Boolean) {
-        val action = if (turnOn) "açmak" else "kapatmak"
-        val instruction = if (turnOn) "açın" else "kapatın"
+        val action = if (turnOn) "einschalten" else "ausschalten"
 
         AlertDialog.Builder(this)
-            .setTitle("WiFi Ayarları")
-            .setMessage("Android 10 ve üzeri sürümlerde WiFi'yi $action için sistem ayarlarına gitmeniz gerekiyor.\n\nAyarlardan WiFi'yi $instruction.")
-            .setPositiveButton("Ayarlara Git") { _, _ ->
+            .setTitle("WiFi Einstellungen")
+            .setMessage("Ab Android 10 müssen Sie WiFi über die Systemeinstellungen $action.")
+            .setPositiveButton("Einstellungen") { _, _ ->
                 try {
-                    // WiFi ayarlarını aç
-                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
-                    startActivity(intent)
+                    startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
                 } catch (e: Exception) {
-                    Log.e(TAG, "WiFi ayarları açılamadı", e)
-                    Toasty.error(
-                        this@MainActivity,
-                        "Ayarlar açılamadı",
-                        Toasty.LENGTH_SHORT, true
-                    ).show()
+                    Log.e(TAG, "WiFi-Einstellungen konnten nicht geöffnet werden", e)
+                    Toast.makeText(this, "Einstellungen konnten nicht geöffnet werden", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("İptal", null)
+            .setNegativeButton("Abbrechen", null)
             .setCancelable(true)
             .show()
     }
 
-    /**
-     * Switch'in durumunu WiFi'nin gerçek durumuna göre güncelle
-     */
     private fun updateWifiSwitchState() {
         val isWifiEnabled = wifiManager.isWifiEnabled()
 
-        // Listener'ı geçici olarak devre dışı bırak ki döngüye girmesin
         binding.switchWifi.setOnCheckedChangeListener(null)
         binding.switchWifi.isChecked = isWifiEnabled
 
-        // Listener'ı tekrar aktif et
         binding.switchWifi.setOnCheckedChangeListener { buttonView, isChecked ->
             val currentWifiState = wifiManager.isWifiEnabled()
 
@@ -217,7 +191,6 @@ class MainActivity : AppCompatActivity(),
             }
         }
     }
-
 
     private fun setupListView() {
         wifiListAdapter = WifiListAdapter(this)
@@ -239,22 +212,20 @@ class MainActivity : AppCompatActivity(),
     // ═════════════════════════════════════════════════════════════════════════════
     //  Permissions
     // ═════════════════════════════════════════════════════════════════════════════
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val allGranted = permissions.values.all { it }
 
         if (allGranted) {
-            Log.d(TAG, "✓ Tüm izinler verildi")
-            Toasty.success(this@MainActivity, "İzinler verildi", Toasty.LENGTH_SHORT, true).show()
-
-            // İzinler verildikten sonra tarama yap
+            Log.d(TAG, "Alle Berechtigungen erteilt")
+            Toast.makeText(this, "Berechtigungen erteilt", Toast.LENGTH_SHORT).show()
             wifiManager.startScan()
         } else {
             val deniedPermissions = permissions.filter { !it.value }.keys
-            Timber.tag(TAG).w("✗ Reddedilen izinler: $deniedPermissions")
+            Timber.tag(TAG).w("Abgelehnte Berechtigungen: $deniedPermissions")
 
-            // Kalıcı olarak reddedilmiş mi kontrol et
             val permanentlyDenied = deniedPermissions.any { permission ->
                 !shouldShowRequestPermissionRationale(permission)
             }
@@ -262,146 +233,100 @@ class MainActivity : AppCompatActivity(),
             if (permanentlyDenied) {
                 showPermissionSettingsDialog()
             } else {
-                Toasty.info(
-                    this@MainActivity,
-                    "WiFi taraması için tüm izinler gereklidir",
-                    Toasty.LENGTH_LONG, true
-                ).show()
+                Toast.makeText(this, "Alle Berechtigungen werden für den WiFi-Scan benötigt", Toast.LENGTH_LONG).show()
             }
         }
     }
 
     private fun showPermissionSettingsDialog() {
         AlertDialog.Builder(this)
-            .setTitle("İzin Gerekli")
-            .setMessage("WiFi özellikleri için konum izni gereklidir. Lütfen uygulama ayarlarından izinleri açın.")
-            .setPositiveButton("Ayarlara Git") { _, _ ->
+            .setTitle("Berechtigung erforderlich")
+            .setMessage("Für die WiFi-Funktionen wird die Standortberechtigung benötigt. Bitte aktivieren Sie die Berechtigungen in den App-Einstellungen.")
+            .setPositiveButton("Einstellungen") { _, _ ->
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.fromParts("package", packageName, null)
                 }
                 startActivity(intent)
             }
-            .setNegativeButton("İptal", null)
+            .setNegativeButton("Abbrechen", null)
             .show()
     }
 
     private fun requestWifiPermissions() {
-        val permissions = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.NEARBY_WIFI_DEVICES
-            )
-
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-
-            else -> arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        }
-
+        val permissions = getRequiredPermissions()
         requestPermissionLauncher.launch(permissions)
     }
 
-
     private fun checkAndRequestPermissionsIfNeeded() {
-        val permissions = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.NEARBY_WIFI_DEVICES
-            )
+        val permissions = getRequiredPermissions()
 
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-
-            else -> arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        }
-
-        // İzinleri kontrol et
         val missingPermissions = permissions.filter { permission ->
             ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
         }
 
         if (missingPermissions.isNotEmpty()) {
-            Log.w(TAG, "Eksik izinler tespit edildi: $missingPermissions")
-
-            // Kullanıcıya bilgi ver
-            AlertDialog.Builder(this)
-                .setTitle("İzin Gerekli")
-                .setMessage("WiFi ağlarını taramak için konum izni gereklidir. İzinleri yeniden vermek ister misiniz?")
-                .setPositiveButton("İzin Ver") { _, _ ->
-                    requestPermissionLauncher.launch(permissions)
-                }
-                .setNegativeButton("İptal", null)
-                .show()
+            Log.w(TAG, "Fehlende Berechtigungen: $missingPermissions")
+            requestPermissionLauncher.launch(permissions)
         }
     }
 
+    private fun getRequiredPermissions(): Array<String> {
+        return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.CHANGE_WIFI_STATE,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.NEARBY_WIFI_DEVICES
+            )
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> arrayOf(
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.CHANGE_WIFI_STATE,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+            else -> arrayOf(
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.CHANGE_WIFI_STATE,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        }
+    }
 
     // ═════════════════════════════════════════════════════════════════════════════
     //  WiFi Operations
     // ═════════════════════════════════════════════════════════════════════════════
+
     private fun loadWifiList() {
         val results = wifiManager.getUniqueScanResults()
         refreshData(results)
     }
 
-
-
     // ═════════════════════════════════════════════════════════════════════════════
     //  SwipeRefreshLayout.OnRefreshListener
     // ═════════════════════════════════════════════════════════════════════════════
+
     override fun onRefresh() {
         wifiManager.startScan()
     }
 
+    // ═════════════════════════════════════════════════════════════════════════════
+    //  ListView Item Click
+    // ═════════════════════════════════════════════════════════════════════════════
 
-    // ═════════════════════════════════════════════════════════════════════════════
-    //  ListView Item Click Listeners
-    // ═════════════════════════════════════════════════════════════════════════════
     override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         val scanResult = wifiListAdapter.getItem(position)
 
-        Log.d(TAG, "═══════════════════════════════════════")
-        Log.d(TAG, "Seçilen ağ:")
-        Log.d(TAG, "  SSID: ${scanResult.SSID}")
-        Log.d(TAG, "  BSSID: ${scanResult.BSSID}")
-        Log.d(TAG, "  Capabilities: ${scanResult.capabilities}")
-        Log.d(TAG, "  Level: ${scanResult.level}")
-        Log.d(TAG, "  Security: ${wifiManager.getSecurityMode(scanResult)}")
-        Log.d(TAG, "  Android SDK: ${Build.VERSION.SDK_INT}")
-        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "Gewähltes Netzwerk: SSID=${scanResult.SSID}, Security=${wifiManager.getSecurityMode(scanResult)}")
 
         when (wifiManager.getSecurityMode(scanResult)) {
             SecurityModeEnum.OPEN -> {
-                Timber.tag(TAG).d("Açık ağa bağlanılıyor...")
+                Timber.tag(TAG).d("Verbindung mit offenem Netzwerk...")
+                lastConnectingSsid = scanResult.SSID
+                lastUsedPassword = ""
                 val result = wifiManager.connectToOpenNetwork(scanResult.SSID)
                 if (!result) {
-                    Toasty.error(
-                        this@MainActivity,
-                        "Bağlantı başlatılamadı",
-                        Toasty.LENGTH_SHORT,
-                        true
-                    ).show()
+                    Toast.makeText(this, "Verbindung konnte nicht gestartet werden", Toast.LENGTH_SHORT).show()
                 }
             }
-
             else -> {
                 showPasswordDialog(scanResult)
             }
@@ -410,49 +335,29 @@ class MainActivity : AppCompatActivity(),
 
     private fun showPasswordDialog(scanResult: ScanResult) {
         ConnectWifiDialog(this@MainActivity) { password ->
-            Log.d(TAG, "═══════════════════════════════════════")
-            Log.d(TAG, "WPA2 Bağlantı Denemesi:")
-            Log.d(TAG, "  SSID: ${scanResult.SSID}")
-            Log.d(TAG, "  Şifre uzunluğu: ${password.length}")
-            Log.d(TAG, "  Android SDK: ${Build.VERSION.SDK_INT}")
-            Log.d(TAG, "  WiFi Durumu: ${if (wifiManager.isWifiEnabled()) "AÇIK" else "KAPALI"}")
-            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, "WPA2 Verbindungsversuch: SSID=${scanResult.SSID}")
             Timber.tag(TAG).d("showPasswordDialog: $scanResult")
 
-
-            // WiFi açık mı kontrol et
             if (!wifiManager.isWifiEnabled()) {
-                Toasty.info(this@MainActivity, "Önce WiFi'yi açın!", Toasty.LENGTH_SHORT, true)
-                    .show()
+                Toast.makeText(this, "Bitte schalten Sie WiFi zuerst ein!", Toast.LENGTH_SHORT).show()
                 return@ConnectWifiDialog
             }
 
-            // Bağlantıyı başlat
+            // Passwort und SSID speichern
+            lastUsedPassword = password
+            lastConnectingSsid = scanResult.SSID
+
             val result = wifiManager.connectToWPA2Network(scanResult.SSID, password)
-            Timber.tag(TAG).d("connectToWPA2Network sonucu: $result")
+            Timber.tag(TAG).d("connectToWPA2Network result: $result")
 
-
-            // Kullanıcıya bilgi ver
             if (result) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    Toasty.info(
-                        this@MainActivity,
-                        "Bildirim gelecek - Ağı onaylayın",
-                        Toasty.LENGTH_LONG, true
-                    ).show()
+                    Toast.makeText(this, "Benachrichtigung wird kommen - Netzwerk bestätigen", Toast.LENGTH_LONG).show()
                 } else {
-                    Toasty.info(
-                        this@MainActivity,
-                        "Bağlantı başlatılıyor...",
-                        Toasty.LENGTH_SHORT, true
-                    ).show()
+                    Toast.makeText(this, "Verbindung wird hergestellt...", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toasty.error(
-                    this@MainActivity,
-                    "Bağlantı başlatılamadı! Logları kontrol edin.",
-                    Toasty.LENGTH_LONG, true
-                ).show()
+                Toast.makeText(this, "Verbindung konnte nicht gestartet werden!", Toast.LENGTH_LONG).show()
             }
         }.apply {
             setSsid(scanResult.SSID)
@@ -471,7 +376,7 @@ class MainActivity : AppCompatActivity(),
 
         AlertDialog.Builder(this)
             .setTitle(ssid)
-            .setItems(arrayOf("Bağlantıyı Kes", "Ağ Konfigürasyonunu Sil")) { _, which ->
+            .setItems(arrayOf("Verbindung trennen", "Netzwerk entfernen")) { _, which ->
                 when (which) {
                     0 -> disconnectNetwork(ssid)
                     1 -> removeNetwork(ssid)
@@ -486,10 +391,9 @@ class MainActivity : AppCompatActivity(),
         val current = wifiManager.getCurrentConnectionInfo()
         if (current?.ssid?.removeSurrounding("\"") == ssid) {
             wifiManager.disconnectCurrentWifi()
-            Toasty.error(this@MainActivity, "Bağlantı kesildi", Toasty.LENGTH_SHORT, true).show()
+            Toast.makeText(this, "Verbindung getrennt", Toast.LENGTH_SHORT).show()
         } else {
-            Toasty.info(this@MainActivity, "Bu ağa bağlı değilsiniz", Toasty.LENGTH_SHORT, true)
-                .show()
+            Toast.makeText(this, "Sie sind nicht mit diesem Netzwerk verbunden", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -497,21 +401,22 @@ class MainActivity : AppCompatActivity(),
         val config = wifiManager.getConfiguredNetworkBySsid(ssid)
         if (config != null) {
             val deleted = wifiManager.removeNetwork(config.networkId)
-            Toasty.info(
-                this@MainActivity,
-                if (deleted) "Ağ silindi" else "Silinemedi (ROOT gerekebilir)",
-                Toasty.LENGTH_SHORT, true
+            Toast.makeText(
+                this,
+                if (deleted) "Netzwerk entfernt" else "Konnte nicht entfernt werden (ROOT erforderlich)",
+                Toast.LENGTH_SHORT
             ).show()
         } else {
-            Toasty.info(this@MainActivity, "Bu ağ kayıtlı değil", Toasty.LENGTH_SHORT, true).show()
+            Toast.makeText(this, "Dieses Netzwerk ist nicht gespeichert", Toast.LENGTH_SHORT).show()
         }
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
     //  WiFi Listener Callbacks
     // ═════════════════════════════════════════════════════════════════════════════
+
     override fun onScanComplete(scanResults: List<ScanResult>) {
-        Timber.tag(TAG).d("\"Tarama tamamlandı: ${scanResults.size} ağ bulundu")
+        Timber.tag(TAG).d("Scan abgeschlossen: ${scanResults.size} Netzwerke gefunden")
         refreshData(scanResults)
     }
 
@@ -519,47 +424,47 @@ class MainActivity : AppCompatActivity(),
         Timber.tag(TAG).d("WiFi Log: $log")
 
         runOnUiThread {
-            // Sadece önemli mesajları göster
-            if (log.contains("Bağlanıyor") ||
-                log.contains("doğrulan") ||
-                log.contains("başarılı") ||
-                log.contains("HATA")
-            ) {
+            if (log.contains("Verbindung") || log.contains("überprüft") ||
+                log.contains("erfolgreich") || log.contains("FEHLER") ||
+                log.contains("Verbund") || log.contains("Passwort") || log.contains("Fehler")) {
                 Snackbar.make(binding.wifiListView, log, Snackbar.LENGTH_SHORT).show()
             }
         }
     }
 
     override fun onWiFiConnectSuccess(ssid: String) {
-        Timber.tag(TAG).d("✓ Bağlantı başarılı: $ssid")
+        Timber.tag(TAG).d("Verbindung erfolgreich: $ssid")
         runOnUiThread {
-            Toasty.success(
-                this@MainActivity,
-                "✓ $ssid ağına bağlandı!",
-                Toasty.LENGTH_LONG, true
-            ).show()
+            Toast.makeText(this, "Verbunden mit $ssid", Toast.LENGTH_LONG).show()
 
-            // Liste güncellenmeden önce kısa bekle
+            // SSID und Passwort zurueckgeben
+            val resultIntent = Intent().apply {
+                putExtra(EXTRA_CONNECTED_SSID, ssid.removeSurrounding("\""))
+                putExtra(EXTRA_CONNECTED_PASSWORD, lastUsedPassword)
+            }
+            setResult(Activity.RESULT_OK, resultIntent)
+
+            // Mit kurzer Verzoegerung schliessen (damit der Benutzer die Meldung sieht)
             binding.wifiListView.postDelayed({
-                loadWifiList()
-            }, 500)
+                finish()
+            }, 1500)
         }
     }
 
     override fun onWiFiConnectFailure(ssid: String) {
-        Timber.tag(TAG).w("✗ Bağlantı başarısız: $ssid")
+        Timber.tag(TAG).w("Verbindung fehlgeschlagen: $ssid")
         runOnUiThread {
-            val message = if (ssid.contains("Yanlış şifre")) {
-                "✗ Yanlış şifre!"
+            val message = if (ssid.contains("Falsches Passwort")) {
+                "Falsches Passwort!"
             } else {
-                "✗ $ssid ağına bağlanılamadı"
+                "Verbindung mit $ssid fehlgeschlagen"
             }
-            Toasty.info(this@MainActivity, message, Toasty.LENGTH_LONG, true).show()
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onWifiEnabled(enabled: Boolean) {
-        Timber.tag(TAG).d("WiFi durumu değişti: ${if (enabled) "AÇIK" else "KAPALI"}")
+        Timber.tag(TAG).d("WiFi Status: ${if (enabled) "EIN" else "AUS"}")
         runOnUiThread {
             binding.switchWifi.isChecked = enabled
             binding.frameLayoutWifi.visibility = if (enabled) VISIBLE else GONE
@@ -567,15 +472,15 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    // ═════════════════════════════════════════════════════════════════════════════
+    //  Helper
+    // ═════════════════════════════════════════════════════════════════════════════
 
-    // ═════════════════════════════════════════════════════════════════════════════
-    //  Helper Methods
-    // ═════════════════════════════════════════════════════════════════════════════
     private fun refreshData(scanResults: List<ScanResult>?) {
         binding.swipeRefreshLayout.isRefreshing = false
         wifiListAdapter.refreshData(scanResults ?: emptyList())
 
-        val message = "${scanResults?.size ?: 0} ağ bulundu"
+        val message = "${scanResults?.size ?: 0} Netzwerke gefunden"
         Snackbar.make(binding.wifiListView, message, Snackbar.LENGTH_SHORT).show()
     }
 }

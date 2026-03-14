@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@android:color/transparent">
+    android:background="@android:color/transparent"
+    android:orientation="vertical">
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
-        android:layout_marginTop="30dp"
-        android:layout_marginBottom="20dp"
-        card_view:cardCornerRadius="20dp"
-        card_view:cardElevation="12dp"
-        card_view:cardBackgroundColor="#FFFFFFFF"
-        card_view:cardUseCompatPadding="true">
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginVertical="20dp"
+        app:cardBackgroundColor="?attr/colorSurface"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:strokeColor="?attr/colorOutline"
+        app:strokeWidth="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:padding="24dp">
 
             <!-- SSID -->
             <TextView
@@ -29,72 +29,80 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginBottom="24dp"
-                android:text="Lapis Home"
-                android:textSize="21sp"
+                android:layout_marginBottom="20dp"
+                android:drawablePadding="8dp"
+                android:text="WiFi Name"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#000000" />
+                app:drawableStartCompat="@drawable/ic_signal_4"
+                app:drawableTint="@color/wifi_toolbar_bg" />
 
-            <!-- Şifre Alanı - iOS Tarzı Alt Çizgi -->
+            <!-- Passwort-Eingabe -->
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Şifre"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
-                android:theme="@style/ThemeOverlay.App.TextInputEditText.Filled"
-                card_view:boxBackgroundMode="none"
-                card_view:hintTextColor="#99000000">
+                android:hint="@string/wifi_password_hint"
+                app:boxStrokeColor="@color/wifi_toolbar_bg"
+                app:endIconMode="password_toggle"
+                app:hintTextColor="@color/wifi_toolbar_bg"
+                app:startIconDrawable="@drawable/ic_lock_closed"
+                app:startIconTint="@color/wifi_toolbar_bg">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_pwd"
-                    android:text="kum6brmepq"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:textSize="18sp"
-                    android:paddingBottom="8dp" />
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Butonlar -->
+            <!-- Buttons -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
+                android:layout_marginTop="24dp"
                 android:orientation="horizontal"
                 android:weightSum="2">
 
-                <!-- İptal - iOS gri metin butonu -->
+                <!-- Abbrechen -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_cancel"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="52dp"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:layout_marginEnd="10dp"
-                    android:text="İptal"
-                    android:textSize="12sp"
-                    android:textColor="#007AFF"
-                    android:fontFamily="sans-serif-medium" />
+                    android:text="@string/wifi_cancel"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="14sp"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_close"
+                    app:iconTint="?attr/colorOnSurface"
+                    app:strokeColor="?attr/colorOutline" />
 
-                <!-- Bağlan - iOS mavi dolu buton -->
+                <!-- Verbinden -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_connect"
+                    style="@style/Widget.Material3.Button"
                     android:layout_width="0dp"
                     android:layout_height="52dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:layout_marginStart="10dp"
-                    android:backgroundTint="#007AFF"
-                    android:text="Bağlan"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
+                    android:backgroundTint="@color/wifi_toolbar_bg"
+                    android:text="@string/wifi_connect"
+                    android:textColor="#F5F5F5"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    card_view:cornerRadius="14dp" />
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_signal_4"
+                    app:iconTint="#F5F5F5" />
 
             </LinearLayout>
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

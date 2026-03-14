@@ -11,16 +11,17 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import com.google.android.material.card.MaterialCardView
 import com.lotus.lapiswifimanager.R
 import com.lotus.lapiswifimanager.wifilibrary.SecurityModeEnum
 import com.lotus.lapiswifimanager.wifilibrary.WiFiManager
 
 /**
- * WiFi tarama sonuçlarını listeleyen modern adapter
- * - Bağlı ağı vurgular
- * - Sinyal gücü ikonları
- * - Güvenlik türü ikonları
- * - Temiz ve okunabilir tasarım
+ * Moderner Adapter zur Auflistung der WiFi-Scan-Ergebnisse
+ * - Verbundenes Netzwerk hervorheben
+ * - Signalstaerke-Icons
+ * - Sicherheitstyp-Icons
+ * - Sauberes und lesbares Design
  */
 class WifiListAdapter(private val context: Context) : BaseAdapter() {
 
@@ -30,16 +31,16 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
         .getSystemService(Context.WIFI_SERVICE) as AndroidWifiManager
 
     /**
-     * Yeni tarama sonuçlarını alır ve listeyi yeniler
+     * Neue Scan-Ergebnisse uebernehmen und Liste aktualisieren
      */
     fun refreshData(newResults: List<ScanResult>?) {
         scanResults.clear()
 
         if (!newResults.isNullOrEmpty()) {
-            // Zaten unique sonuçlar geliyorsa direkt ekle
+            // Bereits eindeutige Ergebnisse direkt hinzufuegen
             scanResults.addAll(newResults.filter { it.SSID.isNotBlank() })
 
-            // Sinyal gücüne göre sırala (en güçlüden zayıfa)
+            // Nach Signalstaerke sortieren (staerkstes zuerst)
             scanResults.sortByDescending { it.level }
         }
 
@@ -75,7 +76,7 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
         // SSID
         holder.ssid.text = scanResult.SSID
 
-        // Bağlı ağı kontrol et
+        // Verbundenes Netzwerk pruefen
         val currentConnection = try {
             systemWifiManager.connectionInfo
         } catch (e: SecurityException) {
@@ -84,27 +85,37 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
 
         val isConnected = currentConnection?.ssid?.removeSurrounding("\"") == scanResult.SSID
 
-        // Bağlı ağı vurgula
+        // Verbundenes Netzwerk hervorheben
         if (isConnected) {
             holder.ssid.setTypeface(null, Typeface.BOLD)
             holder.ssid.setTextColor(ContextCompat.getColor(context, android.R.color.holo_blue_dark))
             holder.ivConnected?.visibility = View.VISIBLE
             holder.tvStatus?.apply {
                 visibility = View.VISIBLE
-                text = "Bağlı"
+                text = "Verbunden"
                 setTextColor(ContextCompat.getColor(context, android.R.color.holo_green_dark))
+            }
+            // Orange border for connected WiFi
+            holder.cardView?.apply {
+                strokeColor = ContextCompat.getColor(context, R.color.wifi_toolbar_bg)
+                strokeWidth = (2 * context.resources.displayMetrics.density).toInt()
             }
         } else {
             holder.ssid.setTypeface(null, Typeface.NORMAL)
             holder.ssid.setTextColor(ContextCompat.getColor(context, android.R.color.black))
             holder.ivConnected?.visibility = View.GONE
             holder.tvStatus?.visibility = View.GONE
+            // Thin gray border for non-connected WiFi
+            holder.cardView?.apply {
+                strokeColor = ContextCompat.getColor(context, android.R.color.darker_gray)
+                strokeWidth = (0.5f * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+            }
         }
 
-        // Güvenlik türü
+        // Sicherheitstyp
         val securityMode = wifiManager.getSecurityMode(scanResult)
         val securityText = when (securityMode) {
-            SecurityModeEnum.OPEN -> "Açık"
+            SecurityModeEnum.OPEN -> "Offen"
             SecurityModeEnum.WEP -> "WEP"
             SecurityModeEnum.WPA -> "WPA"
             SecurityModeEnum.WPA2 -> "WPA2"
@@ -113,7 +124,7 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
 
         holder.tvSecurity?.text = securityText
 
-        // Güvenlik ikonu
+        // Sicherheits-Icon
         holder.ivSecurity?.setImageResource(
             when (securityMode) {
                 SecurityModeEnum.OPEN -> R.drawable.ic_lock_open
@@ -121,13 +132,13 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
             }
         )
 
-        // Sinyal gücü
+        // Signalstaerke
         val signalLevel = AndroidWifiManager.calculateSignalLevel(scanResult.level, 5)
         val signalPercentage = ((signalLevel / 4.0) * 100).toInt()
 
         holder.tvSignalLevel?.text = "$signalPercentage%"
 
-        // Sinyal gücü ikonu
+        // Signalstaerke-Icon
         holder.ivSignalLevel?.setImageResource(
             when (signalLevel) {
                 0 -> R.drawable.ic_signal_0
@@ -139,7 +150,7 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
             }
         )
 
-        // Frekans bandı (2.4GHz / 5GHz)
+        // Frequenzband (2.4GHz / 5GHz)
         val frequency = scanResult.frequency
         val band = when {
             frequency in 2400..2500 -> "2.4 GHz"
@@ -158,6 +169,7 @@ class WifiListAdapter(private val context: Context) : BaseAdapter() {
     }
 
     private class ViewHolder(view: View) {
+        val cardView: MaterialCardView? = view.findViewById(R.id.card_wifi_item)
         val ssid: TextView = view.findViewById(R.id.ssid)
         val tvSecurity: TextView? = view.findViewById(R.id.tv_security)
         val tvSignalLevel: TextView? = view.findViewById(R.id.tv_signal_level)

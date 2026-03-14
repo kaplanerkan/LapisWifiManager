@@ -1,143 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="8dp">
 
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_wifi_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp">
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeColor="#E67E22"
+        app:strokeWidth="2dp">
 
-        <!-- Sol taraf: İkonlar -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginEnd="12dp"
-            android:gravity="center">
+            android:orientation="horizontal"
+            android:padding="14dp">
 
-            <!-- Sinyal gücü ikonu -->
-            <ImageView
-                android:id="@+id/iv_signal_level"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:contentDescription="Sinyal gücü"
-                android:src="@drawable/ic_signal_4"
-                app:tint="@android:color/holo_blue_dark" />
-
-            <!-- Güvenlik ikonu -->
-            <ImageView
-                android:id="@+id/iv_security"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginTop="4dp"
-                android:contentDescription="Güvenlik"
-                android:src="@drawable/ic_lock_closed"
-                app:tint="@android:color/darker_gray" />
-
-        </LinearLayout>
-
-        <!-- Orta: WiFi bilgileri -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <!-- SSID ve Bağlı durumu -->
+            <!-- Links: Signal + Sicherheits-Icons -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/ssid"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    tools:text="Linksys00100_5GHz" />
-
-                <TextView
-                    android:id="@+id/tv_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Bağlı"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/holo_green_dark"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                android:layout_marginEnd="14dp"
+                android:gravity="center"
+                android:orientation="vertical">
 
                 <ImageView
-                    android:id="@+id/iv_connected"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
-                    android:contentDescription="Bağlı"
-                    android:src="@drawable/ic_check"
-                    android:visibility="gone"
-                    app:tint="@android:color/holo_green_dark"
-                    tools:visibility="visible" />
+                    android:id="@+id/iv_signal_level"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:contentDescription="@string/wifi_signal_strength"
+                    android:src="@drawable/ic_signal_4"
+                    app:tint="#E67E22" />
+
+                <ImageView
+                    android:id="@+id/iv_security"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginTop="4dp"
+                    android:contentDescription="@string/wifi_security"
+                    android:src="@drawable/ic_lock_closed"
+                    app:tint="#666666" />
 
             </LinearLayout>
 
-            <!-- Güvenlik ve Frekans -->
+            <!-- Mitte: WiFi-Informationen -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tv_security"
-                    android:layout_width="wrap_content"
+                <!-- SSID + Verbunden -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
-                    tools:text="WPA2" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" • "
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
+                    <TextView
+                        android:id="@+id/ssid"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        tools:text="Linksys00100_5GHz" />
 
-                <TextView
-                    android:id="@+id/tv_frequency"
-                    android:layout_width="wrap_content"
+                    <TextView
+                        android:id="@+id/tv_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/wifi_connected"
+                        android:textColor="#2E7D32"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/iv_connected"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp"
+                        android:contentDescription="@string/wifi_connected"
+                        android:src="@drawable/ic_check"
+                        android:visibility="gone"
+                        app:tint="#2E7D32"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <!-- Sicherheit + Frequenz -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
-                    tools:text="5 GHz" />
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_security"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#666666"
+                        android:textSize="12sp"
+                        tools:text="WPA2" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" • "
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_frequency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#666666"
+                        android:textSize="12sp"
+                        tools:text="5 GHz" />
+
+                </LinearLayout>
 
             </LinearLayout>
+
+            <!-- Rechts: Signal % -->
+            <TextView
+                android:id="@+id/tv_signal_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:textColor="#E67E22"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="100%" />
 
         </LinearLayout>
 
-        <!-- Sağ taraf: Sinyal yüzdesi -->
-        <TextView
-            android:id="@+id/tv_signal_level"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="8dp"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/holo_blue_dark"
-            tools:text="85%" />
+    </com.google.android.material.card.MaterialCardView>
 
-    </LinearLayout>
-
-</androidx.cardview.widget.CardView>
+</FrameLayout>

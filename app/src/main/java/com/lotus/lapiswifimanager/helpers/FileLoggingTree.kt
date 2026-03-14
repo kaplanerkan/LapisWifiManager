@@ -14,21 +14,21 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 
-/*** KULLANIMI
+/*** VERWENDUNG
 
-        // Farklı seviyelerde loglama
-        Timber.v("Verbose log mesajı")
-        Timber.d("Debug log mesajı")
-        Timber.i("Info log mesajı")
-        Timber.w("Warning log mesajı")
-        Timber.e("Error log mesajı")
-        Timber.tag(TAG).e("HATA")
+        // Logging auf verschiedenen Ebenen
+        Timber.v("Verbose Log-Nachricht")
+        Timber.d("Debug Log-Nachricht")
+        Timber.i("Info Log-Nachricht")
+        Timber.w("Warning Log-Nachricht")
+        Timber.e("Error Log-Nachricht")
+        Timber.tag(TAG).e("FEHLER")
 
-        // Exception ile loglama
+        // Logging mit Exception
         try {
-        // bir işlem
+        // eine Operation
         } catch (e: Exception) {
-        Timber.e(e, "Bir hata oluştu")
+        Timber.e(e, "Ein Fehler ist aufgetreten")
         }
 
  */
@@ -57,8 +57,8 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
 
                 writeLogToFile(priority, tag, message, t)
             } catch (e: Exception) {
-                // Timber kullanmadan basit log
-                Timber.tag("FileLoggingTree").e("Log yazılırken hata: ${e.message}")
+                // Einfacher Log ohne Timber
+                Timber.tag("FileLoggingTree").e("Fehler beim Schreiben des Logs: ${e.message}")
             }
         }
     }

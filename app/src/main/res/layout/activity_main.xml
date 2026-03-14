@@ -4,19 +4,21 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
+        android:layout_height="wrap_content">
 
-        <androidx.appcompat.widget.Toolbar
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
+            android:background="@color/wifi_toolbar_bg"
+            app:navigationIconTint="#F5F5F5"
+            app:title="@string/wifi_manager_title"
+            app:titleTextColor="#F5F5F5" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -26,17 +28,21 @@
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.appcompat.widget.SwitchCompat
+        <!-- WiFi Switch -->
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/switch_wifi"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="20dp"
-            android:text="Switch WI-FI" />
+            android:text="@string/wifi_switch_label"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <View
+        <com.google.android.material.divider.MaterialDivider
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#FF000000" />
+            android:layout_height="wrap_content"
+            app:dividerColor="?attr/colorOutlineVariant" />
 
         <FrameLayout
             android:id="@+id/frameLayoutWifi"
@@ -44,7 +50,6 @@
             android:layout_height="match_parent">
 
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-
                 android:id="@+id/swipeRefreshLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -52,7 +57,12 @@
                 <ListView
                     android:id="@+id/wifiListView"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"
+                    android:divider="@android:color/transparent"
+                    android:dividerHeight="8dp"
+                    android:clipToPadding="false"
+                    android:padding="4dp" />
+
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
             <TextView
@@ -60,10 +70,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:text="There is no available Wi-Fi nearby. \n Try pull-to-refresh."
+                android:text="@string/wifi_empty_list"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="14sp"
                 android:visibility="gone" />
 
         </FrameLayout>
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-

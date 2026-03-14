@@ -13,11 +13,11 @@ class ConnectWifiDialog(
     private val onConnectClick: (String) -> Unit
 ) : Dialog(context, R.style.ShareDialog) {
 
-    // ViewBinding – null-safe + memory leak yok
+    // ViewBinding – null-safe + kein Memory Leak
     private var _binding: DialogConnectWifiBinding? = null
-    private val binding get() = _binding!! // sadece _binding null değilse kullanılır
+    private val binding get() = _binding!! // nur verwenden wenn _binding nicht null ist
 
-    // show()'dan önce setSsid çağrılırsa diye geçici saklarız
+    // Temporaer speichern falls setSsid vor show() aufgerufen wird
     private var pendingSsid: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +26,7 @@ class ConnectWifiDialog(
         _binding = DialogConnectWifiBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Daha önce setSsid çağrıldıysa şimdi uygula
+        // Falls setSsid zuvor aufgerufen wurde, jetzt anwenden
         pendingSsid?.let { ssid ->
             binding.tvSsid.text = ssid
             pendingSsid = null
@@ -47,12 +47,12 @@ class ConnectWifiDialog(
                 onConnectClick(password)
                 dismiss()
             } else {
-                binding.etPwd.error = "Şifre giriniz"
+                binding.etPwd.error = "Bitte Passwort eingeben"
             }
         }
     }
 
-    /** Dışarıdan SSID ayarla – show()'dan önce/sonra fark etmez, crash vermez! */
+    /** SSID von aussen setzen – funktioniert vor/nach show(), kein Crash! */
     fun setSsid(ssid: String): ConnectWifiDialog {
         if (_binding != null) {
             binding.tvSsid.text = ssid
@@ -76,7 +76,7 @@ class ConnectWifiDialog(
         setCanceledOnTouchOutside(false)
     }
 
-    // Memory leak önlemek için ÇOK ÖNEMLİ!
+    // SEHR WICHTIG um Memory Leaks zu vermeiden!
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         _binding = null

@@ -28,7 +28,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
     }
 
 
-    // Listener'lar
+    // Listener
     private var onWifiEnabledListener: OnWifiEnabledListener? = null
     private var onWifiScanResultsListener: OnWifiScanResultsListener? = null
     private var onWifiConnectListener: OnWifiConnectListener? = null
@@ -40,11 +40,11 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
         registerReceiver()
     }
 
-    /** WiFi'yi açar */
+    /** WiFi aktivieren */
     @Suppress("DEPRECATION")
     fun openWiFi() {
         if (!hasChangeWifiStatePermission()) {
-            Log.w(TAG, "WiFi açmak için CHANGE_WIFI_STATE izni gerekli")
+            Log.w(TAG, "CHANGE_WIFI_STATE Berechtigung zum Aktivieren von WiFi erforderlich")
             return
         }
 
@@ -56,24 +56,24 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
 
         if (!enabled) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Log.w(TAG, "Android 10+ üzerinde WiFi'yi programatik olarak açamazsınız")
-                // Listener'a bildir ki MainActivity kullanıcıyı yönlendirsin
+                Log.w(TAG, "WiFi kann ab Android 10+ nicht programmatisch aktiviert werden")
+                // Listener benachrichtigen, damit MainActivity den Benutzer weiterleitet
                 onWifiEnabledListener?.onWifiEnabled(false)
             } else {
                 runCatching {
                     wifiManager.isWifiEnabled = true
                 }.onFailure { e ->
-                    Log.e(TAG, "WiFi açılamadı", e)
+                    Log.e(TAG, "WiFi konnte nicht aktiviert werden", e)
                 }
             }
         }
     }
 
-    /** WiFi'yi kapatır */
+    /** WiFi deaktivieren */
     @Suppress("DEPRECATION")
     fun closeWiFi() {
         if (!hasChangeWifiStatePermission()) {
-            Log.w(TAG, "WiFi kapatmak için CHANGE_WIFI_STATE izni gerekli")
+            Log.w(TAG, "CHANGE_WIFI_STATE Berechtigung zum Deaktivieren von WiFi erforderlich")
             return
         }
 
@@ -85,14 +85,14 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
 
         if (enabled) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Log.w(TAG, "Android 10+ üzerinde WiFi'yi programatik olarak kapatamazsınız")
-                // Listener'a bildir ki MainActivity kullanıcıyı yönlendirsin
+                Log.w(TAG, "WiFi kann ab Android 10+ nicht programmatisch deaktiviert werden")
+                // Listener benachrichtigen, damit MainActivity den Benutzer weiterleitet
                 onWifiEnabledListener?.onWifiEnabled(true)
             } else {
                 runCatching {
                     wifiManager.isWifiEnabled = false
                 }.onFailure { e ->
-                    Log.e(TAG, "WiFi kapatılamadı", e)
+                    Log.e(TAG, "WiFi konnte nicht deaktiviert werden", e)
                 }
             }
         }
@@ -101,7 +101,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
 
     fun connectToOpenNetwork(ssid: String): Boolean {
         if (!hasRequiredPermissions()) {
-            Log.w(TAG, "WiFi bağlantısı için gerekli izinler yok")
+            Log.w(TAG, "Erforderliche Berechtigungen fuer WiFi-Verbindung fehlen")
             return false
         }
 
@@ -111,7 +111,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
 
     fun connectToWEPNetwork(ssid: String, password: String): Boolean {
         if (!hasRequiredPermissions()) {
-            Log.w(TAG, "WiFi bağlantısı için gerekli izinler yok")
+            Log.w(TAG, "Erforderliche Berechtigungen fuer WiFi-Verbindung fehlen")
             return false
         }
 
@@ -119,7 +119,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
         return networkId != -1 && enableNetwork(networkId)
     }
 
-    // Listener ayarları
+    // Listener-Einstellungen
     fun setOnWifiEnabledListener(listener: OnWifiEnabledListener?) {
         onWifiEnabledListener = listener
     }
@@ -162,9 +162,9 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
                 appContext.registerReceiver(wifiStateReceiver, filter)
             }
             isReceiverRegistered = true
-            Log.d(TAG, "WiFi receiver kayıt edildi")
+            Log.d(TAG, "WiFi Receiver registriert")
         }.onFailure { e ->
-            Log.e(TAG, "Receiver kayıt edilemedi", e)
+            Log.e(TAG, "Receiver konnte nicht registriert werden", e)
         }
     }
 
@@ -174,9 +174,9 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
         runCatching {
             appContext.unregisterReceiver(wifiStateReceiver)
             isReceiverRegistered = false
-            Log.d(TAG, "WiFi receiver kayıt silindi")
+            Log.d(TAG, "WiFi Receiver abgemeldet")
         }.onFailure { e ->
-            Log.e(TAG, "Receiver kayıt silinemedi", e)
+            Log.e(TAG, "Receiver konnte nicht abgemeldet werden", e)
         }
     }
 
@@ -198,41 +198,41 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
 
             when (state) {
                 AndroidWifiManager.WIFI_STATE_ENABLED -> {
-                    Log.i(TAG, "WiFi açıldı")
+                    Log.i(TAG, "WiFi aktiviert")
                     onWifiEnabledListener?.onWifiEnabled(true)
                 }
                 AndroidWifiManager.WIFI_STATE_DISABLED -> {
-                    Log.i(TAG, "WiFi kapandı")
+                    Log.i(TAG, "WiFi deaktiviert")
                     onWifiEnabledListener?.onWifiEnabled(false)
                 }
                 AndroidWifiManager.WIFI_STATE_ENABLING -> {
-                    Log.i(TAG, "WiFi açılıyor...")
+                    Log.i(TAG, "WiFi wird aktiviert...")
                 }
                 AndroidWifiManager.WIFI_STATE_DISABLING -> {
-                    Log.i(TAG, "WiFi kapanıyor...")
+                    Log.i(TAG, "WiFi wird deaktiviert...")
                 }
             }
         }
 
         @Suppress("DEPRECATION")
         private fun handleScanResultsAvailable() {
-            Log.i(TAG, "WiFi tarama tamamlandı")
+            Log.i(TAG, "WiFi-Scan abgeschlossen")
 
             if (!hasWifiStatePermission()) {
-                Log.e(TAG, "⚠️ WiFi State izni yok!")
+                Log.e(TAG, "WiFi State Berechtigung fehlt!")
                 onWifiScanResultsListener?.onScanComplete(emptyList())
                 return
             }
 
             if (!hasLocationPermission()) {
-                Log.e(TAG, "⚠️ Location izni yok!")
+                Log.e(TAG, "Location Berechtigung fehlt!")
                 onWifiScanResultsListener?.onScanComplete(emptyList())
                 return
             }
 
             runCatching {
                 val results = wifiManager.scanResults ?: emptyList()
-                Log.d(TAG, "Tarama sonucu: ${results.size} ağ bulundu")
+                Log.d(TAG, "Scan-Ergebnis: ${results.size} Netzwerke gefunden")
 
                 val uniqueResults = results.asSequence()
                     .filter { it.SSID.isNotBlank() }
@@ -241,15 +241,15 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
                     .values
                     .toList()
 
-                Log.d(TAG, "Benzersiz ağlar: ${uniqueResults.size}")
+                Log.d(TAG, "Eindeutige Netzwerke: ${uniqueResults.size}")
                 onWifiScanResultsListener?.onScanComplete(uniqueResults)
             }.onFailure { e ->
                 when (e) {
                     is SecurityException -> {
-                        Log.e(TAG, "⚠️ SecurityException - İzinler kaybolmuş!", e)
+                        Log.e(TAG, "SecurityException - Berechtigungen verloren!", e)
                     }
                     else -> {
-                        Log.e(TAG, "Scan results alınamadı", e)
+                        Log.e(TAG, "Scan-Ergebnisse konnten nicht abgerufen werden", e)
                     }
                 }
                 onWifiScanResultsListener?.onScanComplete(emptyList())
@@ -271,11 +271,11 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
             val error = intent.getIntExtra(AndroidWifiManager.EXTRA_SUPPLICANT_ERROR, -1)
             if (error != -1) {
                 val errorMsg = when (error) {
-                    AndroidWifiManager.ERROR_AUTHENTICATING -> "Kimlik doğrulama hatası (yanlış şifre?)"
-                    else -> "Bilinmeyen hata: $error"
+                    AndroidWifiManager.ERROR_AUTHENTICATING -> "Authentifizierungsfehler (falsches Passwort?)"
+                    else -> "Unbekannter Fehler: $error"
                 }
-                Log.e(TAG, "Bağlantı hatası: $errorMsg")
-                onWifiConnectListener?.onWiFiConnectLog("HATA: $errorMsg")
+                Log.e(TAG, "Verbindungsfehler: $errorMsg")
+                onWifiConnectListener?.onWiFiConnectLog("FEHLER: $errorMsg")
             }
 
             val wifiInfo = if (hasWifiStatePermission()) {
@@ -284,17 +284,17 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
                 null
             }
 
-            val currentSsid = wifiInfo?.ssid?.removeSurrounding("\"") ?: "Bilinmiyor"
+            val currentSsid = wifiInfo?.ssid?.removeSurrounding("\"") ?: "Unbekannt"
 
             Log.d(TAG, "Supplicant State: ${newState?.name}, SSID: $currentSsid, Error: $error")
 
-            // Kullanıcı dostu mesajlar
+            // Benutzerfreundliche Meldungen
             val userMessage = when (newState) {
-                SupplicantState.ASSOCIATING -> "Bağlanıyor..."
-                SupplicantState.ASSOCIATED -> "Bağlandı, IP alınıyor..."
-                SupplicantState.FOUR_WAY_HANDSHAKE -> "Şifre doğrulanıyor..."
-                SupplicantState.GROUP_HANDSHAKE -> "Şifreleme ayarlanıyor..."
-                SupplicantState.COMPLETED -> "Bağlantı başarılı!"
+                SupplicantState.ASSOCIATING -> "Verbindung wird hergestellt..."
+                SupplicantState.ASSOCIATED -> "Verbunden, IP wird abgerufen..."
+                SupplicantState.FOUR_WAY_HANDSHAKE -> "Passwort wird überprüft..."
+                SupplicantState.GROUP_HANDSHAKE -> "Verschlüsselung wird konfiguriert..."
+                SupplicantState.COMPLETED -> "Verbindung erfolgreich!"
                 else -> null
             }
 
@@ -304,7 +304,7 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
 
             when (newState) {
                 SupplicantState.COMPLETED -> {
-                    Log.i(TAG, "✓ Bağlantı başarılı: $currentSsid")
+                    Log.i(TAG, "Verbindung erfolgreich: $currentSsid")
                     onWifiConnectListener?.onWiFiConnectSuccess(currentSsid)
                 }
 
@@ -312,25 +312,25 @@ class WiFiManager private constructor(context: Context) : BaseWiFiManager(contex
                 SupplicantState.INACTIVE,
                 SupplicantState.INTERFACE_DISABLED -> {
                     if (error == AndroidWifiManager.ERROR_AUTHENTICATING) {
-                        Log.e(TAG, "✗ Şifre yanlış: $currentSsid")
-                        onWifiConnectListener?.onWiFiConnectFailure("$currentSsid (Yanlış şifre)")
+                        Log.e(TAG, "Falsches Passwort: $currentSsid")
+                        onWifiConnectListener?.onWiFiConnectFailure("$currentSsid (Falsches Passwort)")
                     } else {
-                        // INTERFACE_DISABLED durumu başlangıçta normal
-                        if (currentSsid != "<unknown ssid>" && currentSsid != "Bilinmiyor") {
-                            Log.w(TAG, "✗ Bağlantı koptu: $currentSsid")
+                        // INTERFACE_DISABLED Zustand ist beim Start normal
+                        if (currentSsid != "<unknown ssid>" && currentSsid != "Unbekannt") {
+                            Log.w(TAG, "Verbindung unterbrochen: $currentSsid")
                             onWifiConnectListener?.onWiFiConnectFailure(currentSsid)
                         }
                     }
                 }
 
-                SupplicantState.SCANNING -> Log.d(TAG, "Taranıyor...")
-                SupplicantState.AUTHENTICATING -> Log.d(TAG, "Kimlik doğrulanıyor...")
-                SupplicantState.ASSOCIATING -> Log.d(TAG, "Bağlanıyor...")
-                SupplicantState.ASSOCIATED -> Log.d(TAG, "Bağlandı, IP alınıyor...")
+                SupplicantState.SCANNING -> Log.d(TAG, "Wird gescannt...")
+                SupplicantState.AUTHENTICATING -> Log.d(TAG, "Authentifizierung...")
+                SupplicantState.ASSOCIATING -> Log.d(TAG, "Verbindung wird hergestellt...")
+                SupplicantState.ASSOCIATED -> Log.d(TAG, "Verbunden, IP wird abgerufen...")
                 SupplicantState.FOUR_WAY_HANDSHAKE -> Log.d(TAG, "4-way handshake...")
                 SupplicantState.GROUP_HANDSHAKE -> Log.d(TAG, "Group key handshake...")
 
-                else -> Log.d(TAG, "Bilinmeyen durum: ${newState?.name}")
+                else -> Log.d(TAG, "Unbekannter Zustand: ${newState?.name}")
             }
         }
 
