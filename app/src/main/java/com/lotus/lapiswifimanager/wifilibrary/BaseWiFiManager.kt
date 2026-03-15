@@ -167,15 +167,25 @@ open class BaseWiFiManager(context: Context) {
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // WifiNetworkSuggestion fuer Android 10+ verwenden (systemweite Verbindung)
-            connectWithSuggestion(ssid, password)
+            try {
+                connectWithSuggestion(ssid, password)
+            } catch (e: NoSuchMethodError) {
+                // Huawei/HarmonyOS meldet falschen SDK-Level - Fallback auf alte Methode
+                Log.w(TAG, "WifiNetworkSuggestion nicht verfuegbar trotz SDK ${Build.VERSION.SDK_INT}, Fallback auf Legacy-Methode", e)
+                connectLegacy(ssid, password)
+            }
         } else {
             // Alte Methode fuer Android 9 und niedriger
-            val networkId = setWPA2Network(ssid, password)
-            if (networkId != -1) {
-                enableNetwork(networkId)
-            } else {
-                false
-            }
+            connectLegacy(ssid, password)
+        }
+    }
+
+    private fun connectLegacy(ssid: String, password: String): Boolean {
+        val networkId = setWPA2Network(ssid, password)
+        return if (networkId != -1) {
+            enableNetwork(networkId)
+        } else {
+            false
         }
     }
     /**
